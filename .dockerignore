@@ -1,0 +1,94 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.py[cod]
+*$py.class
+.pytest_cache
+.coverage
+htmlcov/
+.tox/
+.nox/
+.coverage.*
+coverage.xml
+
+# Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+
+# Project specific
+*.log
+logs/
+log/
+tests/
+*.md
+LICENSE
+*.session
+*.session-journal
+downloads/
+uploads/
+temp/
+*.db
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Development
+.git/
+.github/
+.pytest_cache/
+.coverage
+htmlcov/
+*.pyc
+__pycache__
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+
+# AWS
+.aws/
+credentials
+.boto
+
+# MongoDB
+dump/
+mongodump/
+
+# Documentation
+docs/
+*.md
+README*
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+tmp/
