@@ -19,8 +19,8 @@ cd ..
 rm -rf package
 
 # Deploy to AWS Lambda (uncomment and modify as needed)
-# aws lambda update-function-code \
-#     --function-name your-function-name \
-#     --zip-file fileb://deployment.zip
+ aws lambda update-function-code \
+     --function-name sunny-store-telegram-bot \
+     --zip-file fileb://deployment.zip
 
 echo "Deployment package created: deployment.zip"
