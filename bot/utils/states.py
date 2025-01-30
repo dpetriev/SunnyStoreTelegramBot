@@ -9,6 +9,8 @@ class State(Enum):
     ADD_PHOTO = auto()
     ADD_PARAMS = auto()
     ADD_COLOR = auto()
+    ADD_COLOR_CODE_CHOICE = auto()  # Choose between auto or manual code for color
+    ADD_COLOR_CODE_MANUAL = auto()  # Enter color code manually
     ADD_COLOR_PHOTO = auto()
     ADD_STOCK_SIZE = auto()
     ADD_STOCK_SIZE_RESPONSE = auto()

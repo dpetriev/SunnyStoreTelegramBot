@@ -1,7 +1,7 @@
 import os
 import uuid
 import logging
-from telegram import Update
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import (
     ContextTypes,
     CommandHandler,
@@ -31,11 +31,14 @@ class AddItemHandler(BaseHandler):
         context.user_data.clear()  # Clear any previous data
         context.user_data['new_item'] = {}
         context.user_data['current_state'] = STATES['ADD_NAME']
+        
         await update.message.reply_text(
             "Enter the item name:",
             reply_markup=get_cancel_keyboard()
         )
         return STATES['ADD_NAME']
+
+
 
     async def handle_name(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle item name input."""
@@ -199,11 +202,10 @@ class AddItemHandler(BaseHandler):
             )
             return STATES['ADD_COLOR']
         else:
-            code_str = self.db.get_next_code()
-            context.user_data['new_item']['code'] = code_str
+            # No parameters, add item directly
             self.db.add_item(context.user_data['new_item'])
             await query.edit_message_text(
-                f"Item added successfully with code {code_str}!"
+                f"Item added successfully!"
             )
             return ConversationHandler.END
 
@@ -212,6 +214,70 @@ class AddItemHandler(BaseHandler):
         text = update.message.text
         context.user_data['current_param']['color'] = text
         context.user_data['current_param']['stock'] = []
+        
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("Auto-generate code", callback_data='auto_color_code'),
+                InlineKeyboardButton("Enter code manually", callback_data='manual_color_code')
+            ],
+            [InlineKeyboardButton("Cancel", callback_data='cancel')]
+        ])
+        
+        await update.message.reply_text(
+            f"Would you like to enter the code for color '{text}' manually or have it auto-generated?",
+            reply_markup=keyboard
+        )
+        return STATES['ADD_COLOR_CODE_CHOICE']
+
+    async def handle_color_code_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle color code generation choice."""
+        query = update.callback_query
+        await query.answer()
+        choice = query.data
+
+        if choice == 'cancel':
+            await self.cancel(update, context)
+            return ConversationHandler.END
+
+        if choice == 'auto_color_code':
+            # Auto-generate code
+            code = self.db.get_next_code()
+            context.user_data['current_param']['code'] = code
+            await query.edit_message_text(
+                f"Generated code for color '{context.user_data['current_param']['color']}': {code}\n\n"
+                "Please send a photo for this color (or tap 'Skip'):",
+                reply_markup=get_skip_keyboard()
+            )
+            return STATES['ADD_COLOR_PHOTO']
+        else:  # manual_color_code
+            await query.edit_message_text(
+                f"Please enter a 6-digit code for color '{context.user_data['current_param']['color']}' (e.g., 000123):",
+                reply_markup=get_cancel_keyboard()
+            )
+            return STATES['ADD_COLOR_CODE_MANUAL']
+
+    async def handle_color_code_manual(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle manual color code entry."""
+        code = update.message.text.strip()
+
+        # Validate code format
+        if not code.isdigit() or len(code) != 6:
+            await update.message.reply_text(
+                "Invalid code format. Please enter exactly 6 digits (e.g., 000123):",
+                reply_markup=get_cancel_keyboard()
+            )
+            return STATES['ADD_COLOR_CODE_MANUAL']
+
+        # Check if code already exists
+        existing_item = self.db.get_item(code)
+        if existing_item:
+            await update.message.reply_text(
+                f"Code {code} is already in use. Please enter a different code:",
+                reply_markup=get_cancel_keyboard()
+            )
+            return STATES['ADD_COLOR_CODE_MANUAL']
+
+        context.user_data['current_param']['code'] = code
         await update.message.reply_text(
             "Please send a photo for this color (or tap 'Skip'):",
             reply_markup=get_skip_keyboard()
@@ -332,9 +398,13 @@ class AddItemHandler(BaseHandler):
             )
             return STATES['ADD_STOCK_SIZE_RESPONSE']
         else:
+            # Save current param to item
             context.user_data['new_item'].setdefault('params', []).append(
                 context.user_data['current_param']
             )
+            # Clear current param
+            context.user_data['current_param'] = {}
+            
             await query.edit_message_text(
                 "Do you want to add another color?",
                 reply_markup=get_yes_no_keyboard()
@@ -372,6 +442,14 @@ class AddItemHandler(BaseHandler):
                 ],
                 STATES['ADD_COLOR']: [
                     MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_color),
+                    CallbackQueryHandler(self.cancel, pattern='^cancel$'),
+                ],
+                STATES['ADD_COLOR_CODE_CHOICE']: [
+                    CallbackQueryHandler(self.handle_color_code_choice, pattern='^(auto_color_code|manual_color_code)$'),
+                    CallbackQueryHandler(self.cancel, pattern='^cancel$'),
+                ],
+                STATES['ADD_COLOR_CODE_MANUAL']: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_color_code_manual),
                     CallbackQueryHandler(self.cancel, pattern='^cancel$'),
                 ],
                 STATES['ADD_COLOR_PHOTO']: [

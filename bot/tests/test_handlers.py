@@ -111,7 +111,7 @@ async def test_search_no_args():
 
     assert update.message.reply_text.called
     update.message.reply_text.assert_called_once_with(
-        "Please provide a search term after /search command.\\n"
+        "Please provide a search term after /search command.\n"
         "Example: /search blue shirt"
     )
 
